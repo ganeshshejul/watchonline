@@ -17,10 +17,10 @@
   ],
   "author": "Ganesh Shejul",
   "license": "MIT",
-  "devDependencies": {
-    "vite": "^5.0.0"
-  },
   "dependencies": {
     "firebase": "^10.7.1"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
   }
 }
