@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', function () {
         tr: false
     };
 
-    const VidSrcDomain = 'https://vidsrc.to';
-    const VinoStreamDomain = 'https://vitea349ina.com';
+    const VidSrcDomain = 'https://vidsrcme.ru';
+    const VinoStreamDomain = 'https://lethe399key.com';
     let initIndStreamPlayer = false;
 
     document.getElementById('playButton').addEventListener('click', function () {
