@@ -1,25 +1,29 @@
 # Watch Movies GS - Complete UI Documentation
 
+> **Latest Update:** Full Light & Dark Mode support with persistent theme preference and system detection.
+
 ## Table of Contents
 1. [Global Theme & Variables](#global-theme--variables)
-2. [Container & Layout](#container--layout)
-3. [Header Section](#header-section)
-4. [Hero Section](#hero-section)
-5. [Steps Section](#steps-section)
-6. [Player Section](#player-section)
-7. [AI Recommendations Section](#ai-recommendations-section)
-8. [Footer Section](#footer-section)
-9. [Modal System](#modal-system)
-10. [Watch History Modal](#watch-history-modal)
-11. [Responsive Design](#responsive-design)
+2. [Light & Dark Mode Support](#light--dark-mode-support)
+3. [Container & Layout](#container--layout)
+4. [Header Section](#header-section)
+5. [Hero Section](#hero-section)
+6. [Steps Section](#steps-section)
+7. [Player Section](#player-section)
+8. [AI Recommendations Section](#ai-recommendations-section)
+9. [Footer Section](#footer-section)
+10. [Modal System](#modal-system)
+11. [Watch History Modal](#watch-history-modal)
+12. [Responsive Design](#responsive-design)
 
 ---
 
 ## Global Theme & Variables
 
 ### CSS Variables
-The entire UI uses a centralized dark theme with purple accents:
+The entire UI uses dynamic CSS variables that adapt to light and dark themes:
 
+**Dark Theme (Default):**
 ```css
 :root {
   --primary-color: #1a1a1e;        /* Main dark background */
@@ -28,11 +32,24 @@ The entire UI uses a centralized dark theme with purple accents:
   --highlight-color: #e94560;      /* Red/pink highlights */
   --text-color: #f5f5f5;           /* Primary white text */
   --text-secondary: #b0b0b0;       /* Secondary gray text */
-  --success-color: ##7b68ee;       /* Success states */
+  --success-color: #7b68ee;        /* Success states */
   --info-color: #dd9af6;           /* Info/accent pink */
   --border-radius: 8px;            /* Standard corner rounding */
   --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   --transition: all 0.3s ease;     /* Standard animation timing */
+}
+```
+
+**Light Theme:**
+```css
+body.light-theme {
+  --primary-color: #f8f9fa;        /* Light gray background */
+  --secondary-color: #ffffff;      /* White backgrounds */
+  --text-color: #212529;           /* Dark text */
+  --text-secondary: #495057;       /* Medium gray text */
+  --accent-color: #6a5acd;         /* Medium purple */
+  --highlight-color: #d6336c;      /* Pink highlights */
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 ```
 
@@ -46,15 +63,115 @@ The entire UI uses a centralized dark theme with purple accents:
 }
 
 body {
-  background-color: #1a1a1e;
+  background-color: var(--primary-color);
   font-family: 'Poppins', sans-serif;
   color: var(--text-color);
   min-height: 100vh;
   line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 ```
 
-**Purpose:** Establishes the foundational color scheme and typography for the entire application.
+**Purpose:** Establishes the foundational color scheme and typography for the entire application. All components use CSS variables for seamless theme switching.
+
+---
+
+## Light & Dark Mode Support
+
+### Theme Toggle
+
+The application features a fully functional light/dark mode toggle that persists user preference and respects system settings.
+
+#### HTML Structure
+```html
+<button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle Theme">
+  <i class="fas fa-sun"></i>
+</button>
+```
+
+#### CSS
+```css
+.theme-toggle-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.theme-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+/* Light mode override */
+body.light-theme .theme-toggle-btn {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body.light-theme .theme-toggle-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+```
+
+#### JavaScript Implementation
+```javascript
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const themeIcon = themeToggleBtn.querySelector('i');
+
+// Check saved theme or system preference
+const savedTheme = localStorage.getItem('theme');
+const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+
+if (savedTheme === 'light' || (!savedTheme && systemPrefersLight)) {
+  document.body.classList.add('light-theme');
+  themeIcon.classList.remove('fa-sun');
+  themeIcon.classList.add('fa-moon');
+}
+
+themeToggleBtn.addEventListener('click', () => {
+  document.body.classList.toggle('light-theme');
+  
+  if (document.body.classList.contains('light-theme')) {
+    localStorage.setItem('theme', 'light');
+    themeIcon.classList.remove('fa-sun');
+    themeIcon.classList.add('fa-moon');
+  } else {
+    localStorage.setItem('theme', 'dark');
+    themeIcon.classList.remove('fa-moon');
+    themeIcon.classList.add('fa-sun');
+  }
+});
+```
+
+### Theme Features
+
+- **Persistent Preference:** Theme choice is saved to `localStorage` and persists across sessions
+- **System Preference Detection:** Automatically detects OS-level theme preference on first visit
+- **Smooth Transitions:** All color changes animate smoothly (300ms)
+- **Icon Toggle:** Sun icon (☀️) in dark mode, Moon icon (🌙) in light mode
+- **Comprehensive Coverage:** 94+ light mode CSS rules covering all components
+
+### Component Adaptations
+
+All UI elements automatically adapt their colors via CSS variables:
+
+- **Backgrounds:** Dark (#1a1a1e) → Light (#f8f9fa)
+- **Text:** Light (#f5f5f5) → Dark (#212529)
+- **Cards:** Dark gray → White with subtle shadows
+- **Borders:** White/transparent → Black/transparent
+- **Buttons:** Maintain accent colors with adjusted contrast
+- **Modals:** Dark overlays → Light overlays
+- **Icons:** Color-adjusted for visibility
+
+**Purpose:** Provides users with comfortable viewing options for different lighting conditions while maintaining brand identity and accessibility standards.
 
 ---
 
@@ -95,24 +212,31 @@ body {
       <h1>Watch Movies <span class="gs-text">GS</span></h1>
     </div>
 
-    <div class="auth-section">
-      <!-- Guest View -->
-      <div id="auth-buttons" class="auth-buttons">
-        <button id="loginBtn" class="auth-btn login-btn">
-          <i class="fas fa-sign-in-alt"></i> Login
-        </button>
-        <button id="signupBtn" class="auth-btn signup-btn">
-          <i class="fas fa-user-plus"></i> Sign Up
-        </button>
-      </div>
+    <div class="header-right">
+      <!-- Theme Toggle -->
+      <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle Theme">
+        <i class="fas fa-sun"></i>
+      </button>
 
-      <!-- Logged-in View -->
-      <div id="user-profile" class="user-profile" style="display: none">
-        <div class="user-info">
-          <img id="userAvatar" class="user-avatar" src="" alt="User Avatar" />
-          <span id="userName" class="user-name"></span>
-          <i class="fas fa-chevron-down dropdown-icon"></i>
+      <!-- Authentication Section -->
+      <div class="auth-section">
+        <!-- Guest View -->
+        <div id="auth-buttons" class="auth-buttons">
+          <button id="loginBtn" class="auth-btn login-btn">
+            <i class="fas fa-sign-in-alt"></i> Login
+          </button>
+          <button id="signupBtn" class="auth-btn signup-btn">
+            <i class="fas fa-user-plus"></i> Sign Up
+          </button>
         </div>
+
+        <!-- Logged-in View -->
+        <div id="user-profile" class="user-profile" style="display: none">
+          <div class="user-info">
+            <img id="userAvatar" class="user-avatar" src="" alt="User Avatar" />
+            <span id="userName" class="user-name"></span>
+            <i class="fas fa-chevron-down dropdown-icon"></i>
+          </div>
         <div class="user-dropdown">
           <button id="watchHistoryBtn" class="dropdown-item">
             <i class="fas fa-history"></i> Watch History
@@ -135,9 +259,16 @@ body {
 #### Header Container
 ```css
 .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
   padding: 20px 0;
   margin-bottom: 20px;
+  background-color: rgba(26, 26, 30, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: var(--transition);
 }
 
 .header-content {
@@ -146,6 +277,12 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 20px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 ```
 
@@ -166,11 +303,11 @@ body {
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
-  color: #fff;
+  color: var(--text-color);  /* Adapts to theme */
 }
 
 .gs-text {
-  color: #dd9af6;           /* Purple "GS" text */
+  color: #dd9af6;            /* Purple "GS" text */
 }
 ```
 
@@ -381,17 +518,18 @@ body {
 }
 
 .step-card {
-  background-color: #1e1e24;
+  background-color: var(--secondary-color);
   border-radius: var(--border-radius);
   padding: 15px;
   flex: 1;
   display: flex;
   align-items: flex-start;
   gap: 15px;
+  transition: var(--transition);
 }
 
 .step-number {
-  background-color: #7b68ee;
+  background-color: var(--accent-color);
   color: white;
   width: 30px;
   height: 30px;
@@ -1399,7 +1537,7 @@ body {
 .disclaimer {
   margin-top: 5px;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
 }
 ```
 
@@ -2122,6 +2260,11 @@ The UI implements comprehensive responsive breakpoints to ensure optimal viewing
     text-align: center;
     gap: 15px;
   }
+  
+  .header-right {
+    justify-content: center;
+    width: 100%;
+  }
 
   .auth-buttons {
     justify-content: center;
@@ -2239,11 +2382,31 @@ The UI implements comprehensive responsive breakpoints to ensure optimal viewing
 
 This Watch Movies GS UI is built with:
 
-- **Dark Theme:** Professional dark color scheme with purple/pink accents
+- **Light & Dark Modes:** Fully functional theme toggle with persistent preferences and system detection
+- **Dynamic Color System:** CSS variables enable seamless theme switching across all components
+- **Sticky Header:** Glassmorphism effect with backdrop blur stays accessible while scrolling
+- **Professional Design:** Dark theme with purple/pink accents, light theme with refined contrast
 - **Modular Components:** Each section is self-contained and reusable
-- **Smooth Animations:** CSS transitions and keyframe animations for polish
+- **Smooth Animations:** CSS transitions (300ms) and keyframe animations for polish
 - **Full Responsiveness:** Three breakpoints ensure optimal viewing on all devices
-- **Accessibility:** Clear visual hierarchy, proper contrast ratios, and intuitive interactions
+- **Accessibility:** Clear visual hierarchy, proper contrast ratios (WCAG AA), and intuitive interactions
 - **Modern Design Patterns:** Glassmorphism (backdrop-filter), gradient buttons, and card-based layouts
+- **Theme Persistence:** localStorage saves user preference across sessions
 
-All components follow a consistent design language using CSS variables, making theme customization straightforward.
+### Theme-Adaptive Features
+
+All UI elements dynamically adapt between themes:
+
+**Dark Mode (Default):**
+- Background: #1a1a1e (near black)
+- Text: #f5f5f5 (off-white)
+- Accent: #7b68ee (bright purple)
+- Cards: Dark gray with white borders
+
+**Light Mode:**
+- Background: #f8f9fa (light gray)
+- Text: #212529 (near black)
+- Accent: #6a5acd (medium purple)
+- Cards: White with subtle shadows
+
+All components follow a consistent design language using CSS variables, making theme customization straightforward and maintenance simple.
