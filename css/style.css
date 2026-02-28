@@ -5,7 +5,7 @@
   --highlight-color: #e94560;
   --text-color: #f5f5f5;
   --text-secondary: #b0b0b0;
-  --success-color: ##7b68ee;
+  --success-color: #7b68ee;
   --info-color: #dd9af6;
   --border-radius: 8px;
   --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -19,11 +19,12 @@
 }
 
 body {
-  background-color: #1a1a1e;
+  background-color: var(--primary-color);
   font-family: 'Poppins', sans-serif;
   color: var(--text-color);
   min-height: 100vh;
   line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .container {
@@ -66,7 +67,7 @@ body {
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
-  color: #fff;
+  color: var(--text-color);
 }
 
 .gs-text {
@@ -238,17 +239,18 @@ body {
 }
 
 .step-card {
-  background-color: #1e1e24;
+  background-color: var(--secondary-color);
   border-radius: var(--border-radius);
   padding: 15px;
   flex: 1;
   display: flex;
   align-items: flex-start;
   gap: 15px;
+  transition: var(--transition);
 }
 
 .step-number {
-  background-color: #7b68ee;
+  background-color: var(--accent-color);
   color: white;
   width: 30px;
   height: 30px;
@@ -406,7 +408,7 @@ body {
   top: 100%;
   left: 0;
   right: 0;
-  background-color: rgba(26, 26, 30, 0.98);
+  background-color: var(--primary-color);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 16px;
@@ -1262,8 +1264,8 @@ body {
 }
 
 .auth-message-btn.signup {
-  background-color: #18171a;
-  border: 2px solid #7b68ee;
+  background-color: var(--accent-color);
+  border: 2px solid var(--accent-color);
   color: #ffffff;
 }
 
@@ -1319,6 +1321,11 @@ body {
     flex-direction: column;
     text-align: center;
     gap: 15px;
+  }
+  
+  .header-right {
+    justify-content: center;
+    width: 100%;
   }
 
   .auth-buttons {
@@ -2314,4 +2321,344 @@ body {
 .disclaimer {
   font-size: 0.8rem;
   margin-top: 5px;
+  color: var(--text-secondary);
+}
+
+/* === UI Enhancements === */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: rgba(26, 26, 30, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: var(--transition);
+}
+
+.auth-submit-btn,
+.signup-btn,
+#playButton,
+.get-recommendations-btn,
+.play-recommendation-btn,
+.check-verification-btn {
+  box-shadow: 0 4px 15px rgba(123, 104, 238, 0.3);
+}
+
+.auth-submit-btn:hover,
+.signup-btn:hover,
+#playButton:hover,
+.get-recommendations-btn:hover,
+.play-recommendation-btn:hover,
+.check-verification-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(123, 104, 238, 0.5);
+}
+
+/* Theme Toggle Button */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.theme-toggle-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.theme-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+/* --- Light Mode Enhancements --- */
+body.light-theme {
+  --primary-color: #f8f9fa;
+  --secondary-color: #ffffff;
+  --text-color: #212529;
+  --text-secondary: #495057;
+  --accent-color: #6a5acd;
+  --highlight-color: #d6336c;
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .site-header {
+  background-color: rgba(248, 249, 250, 0.85); /* dynamic sticky header bg */
+}
+
+body.light-theme .site-header,
+body.light-theme .recommendations-section,
+body.light-theme .site-footer {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .theme-toggle-btn {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body.light-theme .theme-toggle-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .auth-btn,
+body.light-theme .user-info,
+body.light-theme .tab-button,
+body.light-theme .genre-btn,
+body.light-theme .cancel-btn,
+body.light-theme .resend-btn,
+body.light-theme .history-item,
+body.light-theme .recommendation-card,
+body.light-theme .search-input-wrapper input,
+body.light-theme #imdbInput,
+body.light-theme .form-group input,
+body.light-theme select {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--text-color);
+}
+
+body.light-theme .auth-btn:hover,
+body.light-theme .user-info:hover,
+body.light-theme .tab-button:hover,
+body.light-theme .genre-btn:hover,
+body.light-theme .cancel-btn:hover,
+body.light-theme .resend-btn:hover:not(:disabled),
+body.light-theme .history-item:hover,
+body.light-theme .search-result:hover {
+  background-color: rgba(123, 104, 238, 0.1);
+  border-color: var(--accent-color);
+}
+
+body.light-theme .user-dropdown,
+body.light-theme .search-dropdown,
+body.light-theme .modal-content,
+body.light-theme .recommendations-placeholder {
+  background-color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .dropdown-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .step-card,
+body.light-theme .input-divider span,
+body.light-theme .auth-divider span {
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .result-poster,
+body.light-theme .history-poster,
+body.light-theme .recommendation-poster img {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .input-divider::before,
+body.light-theme .auth-divider::before {
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+}
+
+body.light-theme .modal {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+body.light-theme .modal-header {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .search-result {
+  border-bottom-color: rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .player-container {
+  background-color: rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+}
+
+body.light-theme .clear-search-btn:hover, body.light-theme .password-toggle-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Additional Light Mode Overrides */
+body.light-theme .signup-btn,
+body.light-theme .auth-submit-btn,
+body.light-theme #playButton,
+body.light-theme .get-recommendations-btn,
+body.light-theme .play-recommendation-btn,
+body.light-theme .check-verification-btn,
+body.light-theme .tab-button.active,
+body.light-theme .genre-btn.active {
+  background: var(--accent-color);
+  color: #ffffff;
+  border-color: var(--accent-color);
+}
+
+body.light-theme .signup-btn:hover,
+body.light-theme .auth-submit-btn:hover,
+body.light-theme #playButton:hover,
+body.light-theme .get-recommendations-btn:hover,
+body.light-theme .play-recommendation-btn:hover,
+body.light-theme .check-verification-btn:hover {
+  background-color: #5a4cbd;
+}
+
+body.light-theme .step-card {
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .step-number {
+  background-color: var(--accent-color);
+}
+
+body.light-theme .step-content h3 {
+  color: var(--accent-color);
+}
+
+body.light-theme .highlight {
+  color: var(--accent-color);
+}
+
+body.light-theme .result-type,
+body.light-theme .recommendation-year,
+body.light-theme .history-type {
+  background-color: rgba(106, 90, 205, 0.15);
+  color: var(--accent-color);
+}
+
+body.light-theme .recommendation-type {
+  background-color: rgba(214, 51, 108, 0.15);
+  color: var(--highlight-color);
+}
+
+body.light-theme .recommendation-rating {
+  background-color: rgba(255, 193, 7, 0.15);
+  color: #f59e0b;
+}
+
+body.light-theme .ai-score {
+  background-color: rgba(106, 90, 205, 0.1);
+  color: var(--accent-color);
+}
+
+body.light-theme .result-year {
+  color: var(--accent-color);
+}
+
+body.light-theme .google-btn {
+  background-color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.2);
+  color: #333;
+}
+
+body.light-theme .google-btn:hover {
+  background-color: #f5f5f5;
+}
+
+body.light-theme .error-message {
+  background-color: rgba(214, 51, 108, 0.1);
+  border-color: rgba(214, 51, 108, 0.3);
+  color: #c1284a;
+}
+
+body.light-theme .success-message {
+  background-color: rgba(106, 90, 205, 0.1);
+  border-color: rgba(106, 90, 205, 0.3);
+  color: var(--accent-color);
+}
+
+body.light-theme .clear-genres-btn {
+  background-color: rgba(214, 51, 108, 0.1);
+  border-color: rgba(214, 51, 108, 0.3);
+  color: var(--highlight-color);
+}
+
+body.light-theme .clear-genres-btn:hover {
+  background-color: rgba(214, 51, 108, 0.2);
+  border-color: var(--highlight-color);
+}
+
+body.light-theme .clear-history-btn {
+  background-color: rgba(214, 51, 108, 0.1);
+  border-color: rgba(214, 51, 108, 0.3);
+  color: var(--highlight-color);
+}
+
+body.light-theme .clear-history-btn:hover {
+  background-color: rgba(214, 51, 108, 0.2);
+  border-color: var(--highlight-color);
+}
+
+body.light-theme .loading-indicator {
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+body.light-theme .spinner {
+  border-color: rgba(0, 0, 0, 0.1);
+  border-top-color: var(--accent-color);
+}
+
+body.light-theme .logo i {
+  color: var(--highlight-color);
+}
+
+body.light-theme .gs-text {
+  color: var(--accent-color);
+}
+
+body.light-theme .play-overlay {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+body.light-theme .play-overlay i {
+  color: var(--accent-color);
+}
+
+body.light-theme .recommendations-placeholder i,
+body.light-theme .ai-loading-animation i,
+body.light-theme .ai-feature i,
+body.light-theme .empty-history i {
+  color: var(--accent-color);
+}
+
+body.light-theme .recommendations-header-main h2 i {
+  color: var(--accent-color);
+}
+
+body.light-theme .loading-dots span {
+  background-color: var(--accent-color);
+}
+
+body.light-theme .auth-message-btn.signup {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+body.light-theme .auth-message-btn.signup:hover {
+  background-color: #5a4cbd;
+  border-color: #5a4cbd;
+}
+
+body.light-theme .auth-message-btn.login {
+  background-color: transparent;
+  border-color: rgba(0, 0, 0, 0.2);
+  color: var(--text-color);
+}
+
+body.light-theme .auth-message-btn.login:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.3);
 }

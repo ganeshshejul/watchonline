@@ -6,7 +6,7 @@
     <title>Watch Movies GS</title>
     <link rel="icon" href="img/favicon.ico" />
     <link rel="stylesheet" href="css/normalize.min.css" />
-    <link rel="stylesheet" href="css/style.min.css" />
+    <link rel="stylesheet" href="css/style.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
@@ -80,8 +80,14 @@
             <h1>Watch Movies <span class="gs-text">GS</span></h1>
           </div>
 
-          <!-- Authentication Section -->
-          <div class="auth-section">
+          <div class="header-right">
+            <!-- Theme Toggle -->
+            <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle Theme">
+              <i class="fas fa-sun"></i>
+            </button>
+
+            <!-- Authentication Section -->
+            <div class="auth-section">
             <!-- When user is not logged in -->
             <div id="auth-buttons" class="auth-buttons">
               <button id="loginBtn" class="auth-btn login-btn">
@@ -116,6 +122,7 @@
                 </button>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </header>
@@ -597,6 +604,34 @@
       });
 
       observer.observe(playerContainer, { childList: true });
+
+      // Theme toggle functionality
+      const themeToggleBtn = document.getElementById('themeToggleBtn');
+      const themeIcon = themeToggleBtn.querySelector('i');
+      
+      // Check saved theme or system preference
+      const savedTheme = localStorage.getItem('theme');
+      const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+      
+      if (savedTheme === 'light' || (!savedTheme && systemPrefersLight)) {
+        document.body.classList.add('light-theme');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+      }
+
+      themeToggleBtn.addEventListener('click', () => {
+        document.body.classList.toggle('light-theme');
+        
+        if (document.body.classList.contains('light-theme')) {
+          localStorage.setItem('theme', 'light');
+          themeIcon.classList.remove('fa-sun');
+          themeIcon.classList.add('fa-moon');
+        } else {
+          localStorage.setItem('theme', 'dark');
+          themeIcon.classList.remove('fa-moon');
+          themeIcon.classList.add('fa-sun');
+        }
+      });
     </script>
   </body>
 </html>
