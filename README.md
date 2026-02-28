@@ -399,7 +399,6 @@ npm run dev
 
 # 🌐 Website Demo:
   https://watchmoviegs.netlify.app <br>
-  https://ganeshshejul.github.io/watchonline
 
 # Steps To Watch The Movies/Series
 
