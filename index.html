@@ -1,120 +1,602 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Watch Movies GS</title>
-  <link rel="icon" href="img/favicon.ico">
-  <link rel="stylesheet" href="css/normalize.min.css" />
-  <link rel="stylesheet" href="css/style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-  <div class="container">
-    <header class="site-header">
-      <div class="logo">
-        <i class="fas fa-film"></i>
-        <h1>Watch Movies <span class="gs-text">GS</span></h1>
-      </div>
-    </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Watch Movies GS</title>
+    <link rel="icon" href="img/favicon.ico" />
+    <link rel="stylesheet" href="css/normalize.min.css" />
+    <link rel="stylesheet" href="css/style.min.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
 
-    <main class="main-content">
-      <section class="hero-section">
-        <h2 class="hero-title">Stream Your Favorite Movies</h2>
-        <p class="hero-subtitle">Enter an IMDb ID to start watching instantly</p>
-      </section>
+    <!-- Load environment variables for Vite -->
+    <script type="module" src="js/vite-env.js"></script>
+    
+    <!-- Fallback: Load environment variables from .env file (for direct HTML opening) -->
+    <script src="js/env-loader.js"></script>
 
-      <section class="steps-section">
-        <div class="steps-container">
-          <div class="step-card">
-            <div class="step-number">1</div>
-            <div class="step-content">
-              <h3>Find Your Movie</h3>
-              <p>Search for your movie on IMDb: <a href="https://www.imdb.com/title/tt1187043" class="imdb-link" target="_blank">https://www.imdb.com/title/IMDB_ID</a></p>
-            </div>
-          </div>
+    <!-- Firebase SDK -->
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+      import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+      import firebaseConfig from './js/config.js';
 
-          <div class="step-card">
-            <div class="step-number">2</div>
-            <div class="step-content">
-              <h3>Copy the IMDb ID</h3>
-              <p>For example: <span class="highlight">tt1187043</span> from the URL</p>
-            </div>
-          </div>
-
-          <div class="step-card">
-            <div class="step-number">3</div>
-            <div class="step-content">
-              <h3>Paste & Play</h3>
-              <p>Enter the ID below and click Play</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="player-section">
-        <div class="input-wrapper">
-          <div class="tabs-container">
-            <button class="tab-button active" data-tab="all">Movies & Series</button>
-            <button class="tab-button" data-tab="movies">Movies</button>
-            <button class="tab-button" data-tab="series">Series</button>
-          </div>
-          <input type="text" id="imdbInput" placeholder="Enter Movie IMDb ID">
-          <button id="playButton"><i class="fas fa-play"></i> Play</button>
-        </div>
-
-        <div class="player-container">
-          <div id="IndStreamPlayer" class="responsive-player"></div>
-          <div class="loading-indicator">
-            <div class="spinner"></div>
-            <p>Loading movie, please wait...</p>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="site-footer">
-      <p>&copy; 2024 Watch Movies GS. All rights reserved.</p>
-      <p class="disclaimer">This site is for educational purposes only.</p>
-    </footer>
-  </div>
-
-  <script src="js/main.js"></script>
-  <script>
-    // Show/hide loading indicator
-    document.getElementById('playButton').addEventListener('click', function() {
-      const loadingIndicator = document.querySelector('.loading-indicator');
-      loadingIndicator.classList.add('show');
-
-      // Hide loading indicator after 15 seconds or when iframe loads
-      setTimeout(function() {
-        loadingIndicator.classList.remove('show');
-      }, 15000);
-    });
-
-    // Make iframe responsive after it's loaded
-    const playerContainer = document.getElementById('IndStreamPlayer');
-    const observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(mutation) {
-        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-          const iframe = playerContainer.querySelector('iframe');
-          if (iframe) {
-            // Make iframe responsive
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
-
-            // Hide loading indicator when iframe is loaded
-            iframe.onload = function() {
-              document.querySelector('.loading-indicator').classList.remove('show');
-            };
-          }
+      // Wait for env to load, then initialize Firebase
+      const initFirebase = () => {
+        // Check if ENV is loaded and has API key
+        console.log('🔍 Checking environment variables...');
+        console.log('ENV object:', window.ENV);
+        console.log('ENV keys:', window.ENV ? Object.keys(window.ENV) : 'undefined');
+        
+        const apiKey = window.ENV?.FIREBASE_API_KEY;
+        console.log('Firebase API Key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'undefined');
+        
+        if (!apiKey || apiKey === 'YOUR_API_KEY' || apiKey === 'your_api_key_here' || apiKey === 'undefined') {
+          console.error('❌ Environment variables not loaded properly!');
+          console.error('API Key value:', apiKey);
+          console.log('Make sure .env file exists with VITE_ prefixed variables');
+          console.log('Example: VITE_FIREBASE_API_KEY=your_actual_key');
+          return;
         }
-      });
-    });
+        
+        console.log('✅ Initializing Firebase with credentials...');
+        window.firebaseConfig = firebaseConfig;
+        window.firebaseApp = initializeApp(window.firebaseConfig);
+        window.firebaseAuth = getAuth(window.firebaseApp);
+        console.log('✅ Firebase initialized successfully');
+      };
 
-    observer.observe(playerContainer, { childList: true });
-  </script>
-</body>
+      // Wait for ENV to be loaded with retry logic
+      let attempts = 0;
+      const maxAttempts = 30;
+      const checkEnvLoaded = setInterval(() => {
+        attempts++;
+        if (window.ENV && Object.keys(window.ENV).length > 0) {
+          clearInterval(checkEnvLoaded);
+          // Small delay to ensure all env loaders have completed
+          setTimeout(initFirebase, 100);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(checkEnvLoaded);
+          console.error('❌ Failed to load environment variables after', maxAttempts, 'attempts');
+          console.log('Attempting to initialize with defaults...');
+          initFirebase();
+        }
+      }, 50);
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <header class="site-header">
+        <div class="header-content">
+          <div class="logo">
+            <i class="fas fa-film"></i>
+            <h1>Watch Movies <span class="gs-text">GS</span></h1>
+          </div>
+
+          <!-- Authentication Section -->
+          <div class="auth-section">
+            <!-- When user is not logged in -->
+            <div id="auth-buttons" class="auth-buttons">
+              <button id="loginBtn" class="auth-btn login-btn">
+                <i class="fas fa-sign-in-alt"></i> Login
+              </button>
+              <button id="signupBtn" class="auth-btn signup-btn">
+                <i class="fas fa-user-plus"></i> Sign Up
+              </button>
+            </div>
+
+            <!-- When user is logged in -->
+            <div id="user-profile" class="user-profile" style="display: none">
+              <div class="user-info">
+                <img
+                  id="userAvatar"
+                  class="user-avatar"
+                  src=""
+                  alt="User Avatar"
+                />
+                <span id="userName" class="user-name"></span>
+                <i class="fas fa-chevron-down dropdown-icon"></i>
+              </div>
+              <div class="user-dropdown">
+                <button id="watchHistoryBtn" class="dropdown-item">
+                  <i class="fas fa-history"></i> Watch History
+                </button>
+                <button id="editProfileBtn" class="dropdown-item">
+                  <i class="fas fa-user-edit"></i> Edit Profile
+                </button>
+                <button id="logoutBtn" class="dropdown-item">
+                  <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <section class="hero-section">
+          <h2 class="hero-title">Stream Your Favorite Movies</h2>
+          <p class="hero-subtitle">
+            Search by movie name or enter an IMDb ID to start watching instantly
+          </p>
+        </section>
+
+        <section class="steps-section">
+          <div class="steps-container">
+            <div class="step-card">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h3>Search by Name</h3>
+                <p>
+                  Type the movie or series name in the search box below and select from the dropdown
+                </p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h3>Or Use IMDb ID</h3>
+                <p>
+                  Alternatively, enter the IMDb ID directly: <span class="highlight">tt1187043</span>
+                </p>
+              </div>
+            </div>
+
+            <div class="step-card">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h3>Click Play</h3>
+                <p>Hit the play button to start streaming instantly</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="player-section">
+          <div class="input-wrapper">
+            <div class="tabs-container">
+              <button class="tab-button active" data-tab="all">
+                Movies & Series
+              </button>
+              <button class="tab-button" data-tab="movies">Movies</button>
+              <button class="tab-button" data-tab="series">Series</button>
+            </div>
+
+            <div class="search-container">
+              <div class="search-input-wrapper">
+                <input
+                  type="text"
+                  id="searchInput"
+                  placeholder="Search for movies or series..."
+                  autocomplete="off"
+                />
+                <i class="fas fa-search search-icon"></i>
+                <button id="clearSearchBtn" class="clear-search-btn" style="display: none;">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+
+              <div id="searchDropdown" class="search-dropdown" style="display: none;">
+                <div class="dropdown-loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Searching...</span>
+                </div>
+              </div>
+
+              <div class="input-divider">
+                <span>OR</span>
+              </div>
+
+              <input
+                type="text"
+                id="imdbInput"
+                placeholder="Enter IMDb ID directly (e.g., tt1234567)"
+              />
+            </div>
+
+            <button id="playButton"><i class="fas fa-play"></i> Play</button>
+          </div>
+
+          <div class="player-container">
+            <div id="IndStreamPlayer" class="responsive-player"></div>
+            <div class="loading-indicator">
+              <div class="spinner"></div>
+              <p>Loading movie, please wait...</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- AI Recommendations Section -->
+        <section class="recommendations-section">
+          <div class="recommendations-header-main">
+            <h2><i class="fas fa-robot"></i> AI-Powered Recommendations</h2>
+            <p>Discover movies and series tailored to your taste using our intelligent recommendation system</p>
+          </div>
+
+          <div class="genre-filters">
+            <h3>Select Genres for Personalized Recommendations:</h3>
+            <div class="genre-buttons">
+              <button class="genre-btn" data-genre="Action">
+                <i class="fas fa-fist-raised"></i> Action
+              </button>
+              <button class="genre-btn" data-genre="Comedy">
+                <i class="fas fa-laugh"></i> Comedy
+              </button>
+              <button class="genre-btn" data-genre="Drama">
+                <i class="fas fa-theater-masks"></i> Drama
+              </button>
+              <button class="genre-btn" data-genre="Horror">
+                <i class="fas fa-ghost"></i> Horror
+              </button>
+              <button class="genre-btn" data-genre="Sci-Fi">
+                <i class="fas fa-rocket"></i> Sci-Fi
+              </button>
+              <button class="genre-btn" data-genre="Romance">
+                <i class="fas fa-heart"></i> Romance
+              </button>
+              <button class="genre-btn" data-genre="Thriller">
+                <i class="fas fa-eye"></i> Thriller
+              </button>
+              <button class="genre-btn" data-genre="Fantasy">
+                <i class="fas fa-magic"></i> Fantasy
+              </button>
+              <button class="genre-btn" data-genre="Crime">
+                <i class="fas fa-user-secret"></i> Crime
+              </button>
+              <button class="genre-btn" data-genre="Animation">
+                <i class="fas fa-palette"></i> Animation
+              </button>
+              <button class="genre-btn" data-genre="Adventure">
+                <i class="fas fa-compass"></i> Adventure
+              </button>
+              <button class="genre-btn" data-genre="Mystery">
+                <i class="fas fa-search"></i> Mystery
+              </button>
+            </div>
+          </div>
+
+          <div class="recommendation-controls">
+            <div class="content-type-selector">
+              <label>Content Type:</label>
+              <select id="recommendationType">
+                <option value="all">Movies & Series</option>
+                <option value="movies">Movies Only</option>
+                <option value="series">Series Only</option>
+              </select>
+            </div>
+
+            <div class="language-selector">
+              <label>Language:</label>
+              <select id="recommendationLanguage">
+                <option value="all">All Languages</option>
+                <option value="english">English</option>
+                <option value="hindi">Hindi/Bollywood</option>
+              </select>
+            </div>
+
+            <button id="getRecommendationsBtn" class="get-recommendations-btn">
+              <i class="fas fa-magic"></i> Get AI Recommendations
+            </button>
+
+            <button id="clearGenresBtn" class="clear-genres-btn">
+              <i class="fas fa-times"></i> Clear All
+            </button>
+
+
+          </div>
+
+          <div id="recommendationsContainer" class="recommendations-container">
+            <div class="recommendations-placeholder">
+              <i class="fas fa-robot"></i>
+              <h3>Ready to discover amazing content?</h3>
+              <p>Select your favorite genres above and click "Get AI Recommendations" to see personalized suggestions based on your preferences and viewing history.</p>
+              <div class="ai-features">
+                <div class="ai-feature">
+                  <i class="fas fa-brain"></i>
+                  <span>Smart Genre Analysis</span>
+                </div>
+                <div class="ai-feature">
+                  <i class="fas fa-history"></i>
+                  <span>Learning from Your History</span>
+                </div>
+                <div class="ai-feature">
+                  <i class="fas fa-star"></i>
+                  <span>Quality-Based Scoring</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <p>&copy; <span id="currentYear"></span> Watch Movies GS. All rights reserved.</p>
+        <p class="disclaimer">This site is for educational purposes only.</p>
+      </footer>
+    </div>
+
+    <!-- Set current year automatically -->
+    <script>
+      document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+
+    <!-- Authentication Modals -->
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-sign-in-alt"></i> Login</h2>
+          <span class="close" data-modal="loginModal">&times;</span>
+        </div>
+        <form id="loginForm" class="auth-form">
+          <div class="form-group">
+            <label for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" required />
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="loginPassword" required />
+              <button type="button" class="password-toggle-btn" data-target="loginPassword">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="auth-submit-btn">
+            <i class="fas fa-sign-in-alt"></i> Login
+          </button>
+          <div class="auth-divider">
+            <span>or</span>
+          </div>
+          <button type="button" id="googleLoginBtn" class="google-btn">
+            <i class="fab fa-google"></i> Continue with Google
+          </button>
+          <p class="auth-switch">
+            Don't have an account? <a href="#" id="switchToSignup">Sign up</a>
+          </p>
+        </form>
+        <div id="loginError" class="error-message"></div>
+      </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div id="signupModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-user-plus"></i> Sign Up</h2>
+          <span class="close" data-modal="signupModal">&times;</span>
+        </div>
+        <form id="signupForm" class="auth-form">
+          <div class="form-group">
+            <label for="signupName">Full Name</label>
+            <input type="text" id="signupName" required />
+          </div>
+          <div class="form-group">
+            <label for="signupEmail">Email</label>
+            <input type="email" id="signupEmail" required />
+          </div>
+          <div class="form-group">
+            <label for="signupPassword">Password</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="signupPassword" required minlength="6" />
+              <button type="button" class="password-toggle-btn" data-target="signupPassword">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <div class="password-input-wrapper">
+              <input
+                type="password"
+                id="confirmPassword"
+                required
+                minlength="6"
+              />
+              <button type="button" class="password-toggle-btn" data-target="confirmPassword">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="auth-submit-btn">
+            <i class="fas fa-user-plus"></i> Sign Up
+          </button>
+          <div class="auth-divider">
+            <span>or</span>
+          </div>
+          <button type="button" id="googleSignupBtn" class="google-btn">
+            <i class="fab fa-google"></i> Continue with Google
+          </button>
+          <p class="auth-switch">
+            Already have an account? <a href="#" id="switchToLogin">Login</a>
+          </p>
+        </form>
+        <div id="signupError" class="error-message"></div>
+      </div>
+    </div>
+
+    <!-- OTP Verification Modal -->
+    <div id="otpVerificationModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-envelope-open-text"></i> Verify Your Email</h2>
+          <span class="close" data-modal="otpVerificationModal">&times;</span>
+        </div>
+        <div class="otp-verification-content">
+          <div class="otp-info">
+            <p>We've sent a verification email to:</p>
+            <strong id="otpEmailDisplay" class="otp-email"></strong>
+            <p class="otp-instruction">Please check your email and click the verification link to complete your registration.</p>
+          </div>
+
+          <div class="otp-actions">
+            <button id="resendVerificationBtn" class="resend-btn">
+              <i class="fas fa-paper-plane"></i> Resend Verification Email
+            </button>
+            <button id="checkVerificationBtn" class="check-verification-btn">
+              <i class="fas fa-check-circle"></i> I've Verified My Email
+            </button>
+          </div>
+
+          <div class="otp-timer">
+            <p>Didn't receive the email? You can resend it in <span id="resendTimer">60</span> seconds</p>
+          </div>
+        </div>
+        <div id="otpError" class="error-message"></div>
+        <div id="otpSuccess" class="success-message"></div>
+      </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-user-edit"></i> Edit Profile</h2>
+          <span class="close" data-modal="editProfileModal">&times;</span>
+        </div>
+        <form id="editProfileForm" class="auth-form">
+          <div class="form-group">
+            <label for="editDisplayName">Display Name</label>
+            <input type="text" id="editDisplayName" required />
+          </div>
+          <div class="form-group">
+            <label for="editEmail">Email</label>
+            <input type="email" id="editEmail" required />
+            <small class="form-note"
+              >Note: Changing email will require re-authentication</small
+            >
+          </div>
+          <div class="form-group">
+            <label for="editCurrentPassword">Current Password</label>
+            <div class="password-input-wrapper">
+              <input
+                type="password"
+                id="editCurrentPassword"
+                placeholder="Required for email/password changes"
+              />
+              <button type="button" class="password-toggle-btn" data-target="editCurrentPassword">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="editNewPassword">New Password (optional)</label>
+            <div class="password-input-wrapper">
+              <input
+                type="password"
+                id="editNewPassword"
+                minlength="6"
+                placeholder="Leave blank to keep current password"
+              />
+              <button type="button" class="password-toggle-btn" data-target="editNewPassword">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="editConfirmPassword">Confirm New Password</label>
+            <div class="password-input-wrapper">
+              <input
+                type="password"
+                id="editConfirmPassword"
+                minlength="6"
+                placeholder="Required if changing password"
+              />
+              <button type="button" class="password-toggle-btn" data-target="editConfirmPassword">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div class="profile-actions">
+            <button type="submit" class="auth-submit-btn">
+              <i class="fas fa-save"></i> Save Changes
+            </button>
+            <button type="button" id="cancelEditBtn" class="cancel-btn">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+          </div>
+        </form>
+        <div id="editProfileError" class="error-message"></div>
+        <div id="editProfileSuccess" class="success-message"></div>
+      </div>
+    </div>
+
+    <!-- Watch History Modal -->
+    <div id="watchHistoryModal" class="modal">
+      <div class="modal-content watch-history-modal">
+        <div class="modal-header">
+          <h2><i class="fas fa-history"></i> Watch History</h2>
+          <span class="close" data-modal="watchHistoryModal">&times;</span>
+        </div>
+        <div class="watch-history-content">
+          <div id="watchHistoryList" class="history-list">
+            <div class="empty-history">
+              <i class="fas fa-film"></i>
+              <h3>No Watch History Yet</h3>
+              <p>Start watching movies and series to see your history here!</p>
+            </div>
+          </div>
+        </div>
+        <div class="history-actions">
+          <button id="clearHistoryBtn" class="clear-history-btn">
+            <i class="fas fa-trash"></i> Clear All History
+          </button>
+          <button id="closeHistoryBtn" class="cancel-btn">
+            <i class="fas fa-times"></i> Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/auth.min.js"></script>
+    <script src="js/search.js"></script>
+    <script src="js/recommendations.js"></script>
+    <script src="js/main.min.js"></script>
+    <script>
+      // Show/hide loading indicator
+      document
+        .getElementById('playButton')
+        .addEventListener('click', function () {
+          const loadingIndicator = document.querySelector('.loading-indicator');
+          loadingIndicator.classList.add('show');
+
+          // Hide loading indicator after 15 seconds or when iframe loads
+          setTimeout(function () {
+            loadingIndicator.classList.remove('show');
+          }, 15000);
+        });
+
+      // Make iframe responsive after it's loaded
+      const playerContainer = document.getElementById('IndStreamPlayer');
+      const observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+          if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            const iframe = playerContainer.querySelector('iframe');
+            if (iframe) {
+              // Make iframe responsive
+              iframe.style.width = '100%';
+              iframe.style.height = '100%';
+
+              // Hide loading indicator when iframe is loaded
+              iframe.onload = function () {
+                document
+                  .querySelector('.loading-indicator')
+                  .classList.remove('show');
+              };
+            }
+          }
+        });
+      });
+
+      observer.observe(playerContainer, { childList: true });
+    </script>
+  </body>
 </html>

@@ -1,0 +1,26 @@
+{
+  "name": "watchonline",
+  "version": "1.0.0",
+  "description": "Watch Movies/Series Online - A web application for streaming movies and series",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "vite preview --port 8080"
+  },
+  "keywords": [
+    "movies",
+    "streaming",
+    "firebase",
+    "vite"
+  ],
+  "author": "Ganesh Shejul",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "firebase": "^10.7.1"
+  }
+}
