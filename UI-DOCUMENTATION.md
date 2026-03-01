@@ -1,6 +1,33 @@
 # Watch Movies GS - Complete UI Documentation
 
-> **Latest Update:** Full Light & Dark Mode support with persistent theme preference and system detection.
+> **Latest Update (March 1, 2026):** Complete UI redesign with modern OTT streaming aesthetics inspired by Netflix, Prime Video, and Apple TV+. Features include glassmorphism effects, purple/pink color scheme, cinematic typography, enhanced light mode implementation, and streamlined interface with AI features removed.
+
+## Major Changes (v5.0)
+
+### Design Enhancements
+- **Glassmorphism UI**: Frosted glass effects using `backdrop-filter: blur(32px)` throughout
+- **Color Scheme**: Purple (#8b5cf6) and pink (#ec4899) gradient accents on cinematic black backgrounds
+- **Typography**: Upgraded to 3.5rem hero title with animated gradient and glow effects
+- **Posters**: Enlarged to 360px (recommendations) and 70x105px (search results) for better visibility
+- **Scrollbar**: Custom purple-to-pink gradient styling
+- **Animations**: Netflix-style hover effects (scale 1.03, translateY -12px, smooth cubic-bezier)
+
+### Light Mode Improvements
+- Complete light theme overrides with `!important` flags
+- White player container and authentication overlay backgrounds
+- Transparent OR divider label (no white box)
+- High-contrast badges with white text on dark purple gradient
+- Proper text color hierarchy (#212529 headings, #495057 body text)
+
+### Removed Features
+- **AI Recommendations Section**: Completely removed for interface simplification
+- Genre selection and recommendation grid deprecated
+
+### Technical Updates
+- CSS variables reorganized for glassmorphism design system
+- Cache busting implemented (currently v=20260301-16)
+- Enhanced shadows and border radius for premium feel
+- Optimized font rendering with antialiasing
 
 ## Table of Contents
 1. [Global Theme & Variables](#global-theme--variables)
@@ -10,46 +37,87 @@
 5. [Hero Section](#hero-section)
 6. [Steps Section](#steps-section)
 7. [Player Section](#player-section)
-8. [AI Recommendations Section](#ai-recommendations-section)
+8. [AI Recommendations Section](#ai-recommendations-section) _(Removed)_
 9. [Footer Section](#footer-section)
 10. [Modal System](#modal-system)
 11. [Watch History Modal](#watch-history-modal)
 12. [Responsive Design](#responsive-design)
+13. [CSS File Structure](#css-file-structure)
 
 ---
 
 ## Global Theme & Variables
 
 ### CSS Variables
-The entire UI uses dynamic CSS variables that adapt to light and dark themes:
+The entire UI uses dynamic CSS variables that adapt to light and dark themes with a modern glassmorphism design:
 
-**Dark Theme (Default):**
+**Dark Theme (Default) - Cinematic OTT Design:**
 ```css
 :root {
-  --primary-color: #1a1a1e;        /* Main dark background */
-  --secondary-color: #16213e;      /* Card/secondary backgrounds */
-  --accent-color: #7b68ee;         /* Primary purple (buttons, links) */
-  --highlight-color: #e94560;      /* Red/pink highlights */
-  --text-color: #f5f5f5;           /* Primary white text */
-  --text-secondary: #b0b0b0;       /* Secondary gray text */
-  --success-color: #7b68ee;        /* Success states */
-  --info-color: #dd9af6;           /* Info/accent pink */
-  --border-radius: 8px;            /* Standard corner rounding */
-  --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --transition: all 0.3s ease;     /* Standard animation timing */
+  /* Dark Mode - Cinematic Black & Purple */
+  --bg-primary: #0a0a0f;           /* Deep cinematic black */
+  --bg-secondary: #131318;         /* Secondary dark background */
+  --bg-tertiary: #1a1a24;          /* Tertiary background */
+  
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.03);     /* Frosted glass background */
+  --glass-border: rgba(255, 255, 255, 0.08); /* Glass borders */
+  --glass-hover: rgba(255, 255, 255, 0.06);  /* Glass hover state */
+  
+  /* Purple/Violet Accents */
+  --accent-primary: #8b5cf6;       /* Primary purple */
+  --accent-light: #a78bfa;         /* Light purple */
+  --accent-dark: #7c3aed;          /* Dark purple */
+  --accent-glow: rgba(139, 92, 246, 0.4);    /* Purple glow effect */
+  
+  /* Pink Highlights */
+  --accent-pink: #ec4899;          /* Hot pink accent */
+  --accent-pink-light: #f472b6;    /* Light pink */
+  --accent-pink-glow: rgba(236, 72, 153, 0.3); /* Pink glow */
+  
+  /* Text Colors */
+  --text-primary: #ffffff;         /* Primary white text */
+  --text-secondary: #a1a1aa;       /* Secondary gray text */
+  --text-tertiary: #71717a;        /* Tertiary gray text */
+  
+  /* Shadows - Enhanced for Depth */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 32px var(--accent-glow);
+  --shadow-pink-glow: 0 0 24px var(--accent-pink-glow);
+  
+  /* Border Radius - Cinematic */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  
+  /* Transitions - Smooth & Natural */
+  --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 ```
 
 **Light Theme:**
 ```css
 body.light-theme {
-  --primary-color: #f8f9fa;        /* Light gray background */
-  --secondary-color: #ffffff;      /* White backgrounds */
-  --text-color: #212529;           /* Dark text */
-  --text-secondary: #495057;       /* Medium gray text */
-  --accent-color: #6a5acd;         /* Medium purple */
-  --highlight-color: #d6336c;      /* Pink highlights */
-  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  /* Light backgrounds with gradients */
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%) !important;
+  
+  /* Text colors for readability */
+  color: #212529 !important;
+  
+  /* Adapted purple accents */
+  --accent-primary: #6a5acd;       /* Medium purple for light mode */
+  --accent-pink: #d6336c;          /* Darker pink for contrast */
+  
+  /* Light mode shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 ```
 
@@ -63,16 +131,19 @@ body.light-theme {
 }
 
 body {
-  background-color: var(--primary-color);
-  font-family: 'Poppins', sans-serif;
-  color: var(--text-color);
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-primary);
   min-height: 100vh;
-  line-height: 1.6;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 ```
 
-**Purpose:** Establishes the foundational color scheme and typography for the entire application. All components use CSS variables for seamless theme switching.
+**Purpose:** Establishes a cinematic OTT streaming aesthetic with gradient backgrounds, glassmorphism effects via backdrop-filter, and optimized typography. All components use CSS variables for seamless theme switching between light and dark modes.
 
 ---
 
@@ -451,23 +522,60 @@ All UI elements automatically adapt their colors via CSS variables:
 ```css
 .hero-section {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 16px;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .hero-title {
-  font-size: 2rem;
-  font-weight: 600;
-  margin-bottom: 10px;
-  color: var(--text-color);
+  font-size: 3.5rem;            /* Large cinematic title */
+  font-weight: 800;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, var(--text-primary), var(--accent-light), var(--accent-pink-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  animation: titleGlow 4s ease-in-out infinite;
+  text-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
+}
+
+@keyframes titleGlow {
+  0%, 100% { filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.3)); }
+  50% { filter: drop-shadow(0 0 40px rgba(236, 72, 153, 0.4)); }
 }
 
 .hero-subtitle {
-  font-size: 1rem;
+  font-size: 1.2rem;
   color: var(--text-secondary);
+  font-weight: 400;
+  line-height: 1.7;
+  max-width: 650px;
+  margin: 0 auto;
+  letter-spacing: 0.01em;
+}
+
+/* Light Mode Adjustments */
+body.light-theme .hero-title {
+  background: linear-gradient(135deg, #6a5acd, #8b5cf6, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;           /* Remove glow in light mode */
 }
 ```
 
-**Purpose:** Welcomes users and explains the primary function of the application.
+**Purpose:** Creates a bold, cinematic welcome with an oversized gradient title (3.5rem) featuring animated glow effects. Adapts gracefully to light mode without overwhelming visual effects.
 
 ---
 
@@ -851,6 +959,13 @@ All UI elements automatically adapt their colors via CSS variables:
   font-size: 0.75rem;
   text-transform: uppercase;
 }
+
+/* Light Mode - High Contrast Badge */
+body.light-theme .result-type {
+  background: linear-gradient(135deg, #6a5acd, #5a4cbd);
+  color: #ffffff !important;
+  box-shadow: 0 2px 4px rgba(106, 90, 205, 0.2);
+}
 ```
 
 #### Divider & IMDb Input
@@ -878,6 +993,11 @@ All UI elements automatically adapt their colors via CSS variables:
   color: var(--text-secondary);
   font-size: 0.85rem;
   font-weight: 500;
+}
+
+/* Light Mode - Transparent OR Label */
+body.light-theme .input-divider span {
+  background-color: transparent;
 }
 
 #imdbInput {
@@ -937,11 +1057,19 @@ All UI elements automatically adapt their colors via CSS variables:
   position: relative;
   aspect-ratio: 16 / 9;
   background-color: rgba(0, 0, 0, 0.3);
-  border-radius: var(--border-radius);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: var(--shadow-lg);
+}
+
+/* Light Mode - White Player Background */
+body.light-theme .player-container {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 #IndStreamPlayer {
@@ -999,11 +1127,70 @@ All UI elements automatically adapt their colors via CSS variables:
 }
 ```
 
-**Purpose:** The core streaming interface with multi-method search (autocomplete and direct IMDb), tab filtering, and an embedded video player with loading states.
+#### Authentication Overlay (Dynamic)
+
+The authentication overlay is dynamically injected by JavaScript when unauthenticated users attempt to play content:
+
+```javascript
+// Created in main.min.js (lines 60-95)
+const authOverlay = document.createElement('div');
+authOverlay.id = 'auth-required-message';
+authOverlay.className = 'auth-required-message';
+// Appended to .player-container
+```
+
+**CSS Styling:**
+```css
+.auth-required-message {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(26, 26, 30, 0.95);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: var(--radius-lg);
+}
+
+/* Light Mode - White Overlay Background */
+body.light-theme .auth-required-message {
+  background: #ffffff !important;
+}
+
+.auth-message-content h3 {
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.auth-message-content p {
+  color: var(--text-secondary);
+}
+
+/* Light Mode - Dark Text for Readability */
+body.light-theme .auth-message-content h3 {
+  color: #212529 !important;
+}
+
+body.light-theme .auth-message-content p {
+  color: #495057 !important;
+}
+```
+
+**Purpose:** The core streaming interface with multi-method search (autocomplete and direct IMDb), tab filtering, and an embedded video player with loading states. The authentication overlay ensures proper visibility in both dark and light modes with appropriate background and text colors.
 
 ---
 
-## AI Recommendations Section
+## AI Recommendations Section (REMOVED)
+
+> **Status:** This feature has been completely removed from the application as of March 1, 2026.
+
+---
+
+## ~~AI Recommendations Section~~ (Historical Reference)
 
 ### HTML Structure
 ```html
@@ -1509,7 +1696,14 @@ All UI elements automatically adapt their colors via CSS variables:
 }
 ```
 
-**Purpose:** Provides AI-driven content discovery with genre selection, filtering options, and a responsive grid layout. Features smooth animations and hover effects.
+**Purpose (Historical):** Previously provided AI-driven content discovery with genre selection, filtering options, and a responsive grid layout. This entire section was removed in the March 2026 redesign to simplify the user interface and focus on core streaming functionality.
+
+**Removal Details:**
+- All AI recommendation HTML removed from [index.html](index.html)
+- Genre selection buttons removed
+- Recommendation grid and cards removed
+- AI-powered features consolidated into future backend implementation
+- Related JavaScript functionality deprecated
 
 ---
 
@@ -2378,35 +2572,103 @@ The UI implements comprehensive responsive breakpoints to ensure optimal viewing
 
 ---
 
+## CSS File Structure
+
+### Active Files
+
+**1. normalize.min.css** (2.2KB, 148 lines)
+- **Purpose:** CSS reset library (normalize.css v8.0.1, MIT License)
+- **Status:** Active - Linked in [index.html](index.html) line 8
+- **Function:** Ensures consistent default styling across different browsers
+- **Usage:** `<link rel="stylesheet" href="css/normalize.min.css" />`
+
+**2. style.css** (67KB, 3,402 lines)
+- **Purpose:** Main application stylesheet with all custom styles
+- **Status:** Active - Linked in [index.html](index.html) line 9 with cache version
+- **Last Modified:** March 1, 2026, 12:31
+- **Features:**
+  - Complete glassmorphism design system
+  - Dark and light theme variables
+  - All component styles
+  - Responsive breakpoints
+  - Animation keyframes
+  - Light mode overrides with `!important` flags
+- **Usage:** `<link rel="stylesheet" href="css/style.css?v=20260301-16" />`
+- **Cache Busting:** Query parameter versioning (currently v=20260301-16)
+
+### Inactive Files
+
+**3. style.min.css** (48KB, 2,664 lines)
+- **Purpose:** Outdated minified version of stylesheet
+- **Status:** Inactive - Not linked anywhere in HTML
+- **Last Modified:** February 28, 2026, 23:03 (before March 1 redesign)
+- **Note:** Contains older CSS variable structure, missing all light-mode fixes, glassmorphism effects, and recent UI updates. Safe to delete or replace with minified version of current style.css.
+
+---
+
 ## Summary
 
 This Watch Movies GS UI is built with:
 
+- **Modern OTT Aesthetic:** Inspired by Netflix, Prime Video, and Apple TV+ with cinematic design
+- **Glassmorphism Effects:** Frosted glass using `backdrop-filter: blur(32px)` throughout the interface
+- **Purple/Pink Color Scheme:** Vibrant gradients (#8b5cf6, #ec4899) on deep black backgrounds
+- **Enhanced Typography:** Oversized 3.5rem hero title with animated gradient and glow effects
 - **Light & Dark Modes:** Fully functional theme toggle with persistent preferences and system detection
 - **Dynamic Color System:** CSS variables enable seamless theme switching across all components
-- **Sticky Header:** Glassmorphism effect with backdrop blur stays accessible while scrolling
-- **Professional Design:** Dark theme with purple/pink accents, light theme with refined contrast
+- **Professional Design:** Cinematic dark theme (#0a0a0f) with enhanced light theme (#f8f9fa gradients)
 - **Modular Components:** Each section is self-contained and reusable
-- **Smooth Animations:** CSS transitions (300ms) and keyframe animations for polish
+- **Smooth Animations:** Cubic-bezier transitions and Netflix-style hover effects
 - **Full Responsiveness:** Three breakpoints ensure optimal viewing on all devices
 - **Accessibility:** Clear visual hierarchy, proper contrast ratios (WCAG AA), and intuitive interactions
-- **Modern Design Patterns:** Glassmorphism (backdrop-filter), gradient buttons, and card-based layouts
+- **Modern Design Patterns:** Glassmorphism, gradient backgrounds, enlarged posters, custom scrollbar
 - **Theme Persistence:** localStorage saves user preference across sessions
+- **Cache Busting:** Query parameter versioning for reliable CSS updates
 
 ### Theme-Adaptive Features
 
 All UI elements dynamically adapt between themes:
 
-**Dark Mode (Default):**
-- Background: #1a1a1e (near black)
-- Text: #f5f5f5 (off-white)
-- Accent: #7b68ee (bright purple)
-- Cards: Dark gray with white borders
+**Dark Mode (Default) - Cinematic:**
+- Background: Linear gradient (#0a0a0f → #131318 → #1a1a24)
+- Text: #ffffff (primary), #a1a1aa (secondary)
+- Accent: #8b5cf6 (purple), #ec4899 (pink)
+- Cards: Glassmorphism with frosted effect
+- Shadows: Deep with purple glow effects
 
 **Light Mode:**
-- Background: #f8f9fa (light gray)
-- Text: #212529 (near black)
-- Accent: #6a5acd (medium purple)
-- Cards: White with subtle shadows
+- Background: Linear gradient (#f8f9fa → #e9ecef → #dee2e6)
+- Text: #212529 (dark headings), #495057 (body text)
+- Accent: #6a5acd (medium purple), #d6336c (pink)
+- Cards: White (#ffffff) with subtle shadows
+- Shadows: Light with reduced opacity
+- Player/Auth Overlays: White backgrounds with dark text for readability
 
 All components follow a consistent design language using CSS variables, making theme customization straightforward and maintenance simple.
+
+### Recent Updates (March 1, 2026)
+
+**Major Changes:**
+1. ✅ Complete redesign with OTT streaming aesthetics (Netflix/Prime/Apple TV+ inspired)
+2. ✅ Glassmorphism effects throughout interface with `backdrop-filter: blur(32px)`
+3. ✅ Purple/pink gradient color scheme (#8b5cf6, #ec4899)
+4. ✅ Hero title enlarged to 3.5rem with animated gradient glow
+5. ✅ Recommendation posters enlarged to 360px height
+6. ✅ Search result thumbnails increased to 70x105px
+7. ✅ Custom scrollbar with purple-to-pink gradient styling
+8. ✅ Netflix-style hover animations (scale 1.03, translateY -12px)
+9. ✅ AI recommendations section completely removed for simplicity
+10. ✅ Light mode fixes: white player/auth backgrounds, transparent OR label, high-contrast badges
+11. ✅ Cache busting mechanism implemented (v=20260301-16)
+12. ✅ Enhanced shadows and border radius (10-24px) for premium feel
+
+**Files Modified:**
+- [index.html](index.html) - AI features removed, cache version v=20260301-16
+- [css/style.css](css/style.css) - 3,402 lines, complete glassmorphism redesign
+- [css/style.min.css](css/style.min.css) - Outdated, not in use (safe to delete)
+
+---
+
+**Documentation Version:** 5.0  
+**Last Updated:** March 1, 2026  
+**CSS Cache Version:** v=20260301-16
