@@ -418,6 +418,43 @@ class AuthManager {
     timerElement.textContent = '60';
   }
 
+  isEmailPasswordUser(user) {
+    if (!user) return false;
+    return user.providerData?.some(provider => provider.providerId === 'password');
+  }
+
+  updateEditProfileVisibility(user) {
+    const isPasswordUser = this.isEmailPasswordUser(user);
+
+    const currentPasswordGroup = document
+      .getElementById('editCurrentPassword')
+      ?.closest('.form-group');
+    const newPasswordGroup = document
+      .getElementById('editNewPassword')
+      ?.closest('.form-group');
+    const confirmPasswordGroup = document
+      .getElementById('editConfirmPassword')
+      ?.closest('.form-group');
+
+    [currentPasswordGroup, newPasswordGroup, confirmPasswordGroup].forEach(group => {
+      if (group) group.style.display = isPasswordUser ? '' : 'none';
+    });
+
+    // Email is managed by provider for non-password accounts
+    const emailInput = document.getElementById('editEmail');
+    const emailNote = emailInput?.closest('.form-group')?.querySelector('.form-note');
+    if (emailInput) {
+      emailInput.readOnly = !isPasswordUser;
+      emailInput.style.opacity = isPasswordUser ? '1' : '0.8';
+      emailInput.style.cursor = isPasswordUser ? 'text' : 'not-allowed';
+    }
+    if (emailNote) {
+      emailNote.textContent = isPasswordUser
+        ? 'Note: Changing email will require re-authentication'
+        : 'Note: Email is managed by your Google account';
+    }
+  }
+
   showEditProfile() {
     // Close the user dropdown
     document.querySelector('.user-profile').classList.remove('active');
@@ -432,6 +469,8 @@ class AuthManager {
       document.getElementById('editCurrentPassword').value = '';
       document.getElementById('editNewPassword').value = '';
       document.getElementById('editConfirmPassword').value = '';
+
+      this.updateEditProfileVisibility(user);
     }
 
     this.showModal('editProfileModal');
@@ -449,6 +488,8 @@ class AuthManager {
     const confirmPassword = document.getElementById(
       'editConfirmPassword'
     ).value;
+    const user = this.currentUser;
+    const isPasswordUser = this.isEmailPasswordUser(user);
 
     // Validation
     if (!displayName) {
@@ -461,12 +502,12 @@ class AuthManager {
       return;
     }
 
-    if (newPassword && newPassword !== confirmPassword) {
+    if (isPasswordUser && newPassword && newPassword !== confirmPassword) {
       this.showError('editProfileError', 'New passwords do not match');
       return;
     }
 
-    if (newPassword && newPassword.length < 6) {
+    if (isPasswordUser && newPassword && newPassword.length < 6) {
       this.showError(
         'editProfileError',
         'New password must be at least 6 characters'
@@ -474,12 +515,22 @@ class AuthManager {
       return;
     }
 
-    const user = this.currentUser;
+    if (!isPasswordUser && email !== user.email) {
+      this.showError(
+        'editProfileError',
+        'Email change is not available for Google sign-in accounts'
+      );
+      return;
+    }
+
+    const safeNewPassword = isPasswordUser ? newPassword : '';
+    const safeCurrentPassword = isPasswordUser ? currentPassword : '';
+
     const emailChanged = email !== user.email;
-    const passwordChanged = newPassword.length > 0;
+    const passwordChanged = safeNewPassword.length > 0;
 
     // If email or password is being changed, current password is required
-    if ((emailChanged || passwordChanged) && !currentPassword) {
+    if (isPasswordUser && (emailChanged || passwordChanged) && !safeCurrentPassword) {
       this.showError(
         'editProfileError',
         'Current password is required to change email or password'
@@ -489,10 +540,10 @@ class AuthManager {
 
     try {
       // Re-authenticate if needed
-      if (emailChanged || passwordChanged) {
+      if (isPasswordUser && (emailChanged || passwordChanged)) {
         const credential = this.EmailAuthProvider.credential(
           user.email,
-          currentPassword
+          safeCurrentPassword
         );
         await this.reauthenticateWithCredential(user, credential);
       }
@@ -508,8 +559,8 @@ class AuthManager {
       }
 
       // Update password
-      if (passwordChanged) {
-        await this.updatePassword(user, newPassword);
+      if (isPasswordUser && passwordChanged) {
+        await this.updatePassword(user, safeNewPassword);
       }
 
       this.showSuccess('editProfileSuccess', 'Profile updated successfully!');
@@ -577,10 +628,18 @@ class AuthManager {
 
     const updatedHistory = await Promise.all(
       history.map(async item => {
-        // If title is missing or is 'Unknown Title', try to fetch details
-        if (!item.title || item.title === 'Unknown Title') {
+        // If title is missing/unknown OR poster is missing, fetch details
+        const needsFetch = !item.title || 
+                          item.title === 'Unknown Title' || 
+                          item.title === 'Unknown' ||
+                          !item.poster || 
+                          item.poster === 'N/A';
+        
+        if (needsFetch) {
           try {
+            console.log(`🔍 Fetching details for ${item.imdbId}...`);
             const movieData = await this.fetchMovieDetails(item.imdbId);
+            console.log(`✅ Fetched data for ${item.imdbId}:`, movieData);
             updated = true;
             return {
               ...item,
@@ -590,7 +649,7 @@ class AuthManager {
               genre: movieData.genre,
             };
           } catch (error) {
-            console.log(`Could not fetch details for ${item.imdbId}:`, error);
+            console.error(`❌ Could not fetch details for ${item.imdbId}:`, error);
             return {
               ...item,
               title: item.title || 'Unknown Title',
@@ -603,6 +662,7 @@ class AuthManager {
 
     // Save updated history if any changes were made
     if (updated) {
+      console.log(`💾 Saving ${updatedHistory.length} updated history items`);
       localStorage.setItem(storageKey, JSON.stringify(updatedHistory));
     }
 
@@ -619,14 +679,15 @@ class AuthManager {
     });
 
     const title = item.title || 'Unknown Title';
-    const year = item.year ? ` (${item.year})` : '';
+    // Only show year if it's valid (not 'Unknown' or empty)
+    const year = item.year && item.year !== 'Unknown' ? ` (${item.year})` : '';
     const displayTitle = `${title}${year}`;
 
     return `
       <div class="history-item" onclick="window.authManager.replayMovie('${item.imdbId}', '${item.type}')" title="Click to watch again">
         <div class="history-poster">
           ${
-            item.poster
+            item.poster && item.poster !== 'N/A'
               ? `<img src="${item.poster}" alt="${title}" onerror="this.parentElement.innerHTML='<i class=\\"fas fa-film\\"></i>'">`
               : '<i class="fas fa-film"></i>'
           }
@@ -638,7 +699,7 @@ class AuthManager {
           <div class="history-title">${displayTitle}</div>
           <div class="history-meta">
             <div class="history-imdb">IMDb: ${item.imdbId}</div>
-            ${item.genre ? `<div class="history-genre">${item.genre}</div>` : ''}
+            ${item.genre && item.genre !== 'Unknown' ? `<div class="history-genre">${item.genre}</div>` : ''}
             <div class="history-date">Watched: ${date}</div>
             <span class="history-type">${this.getTypeDisplayName(item.type)}</span>
           </div>
@@ -663,10 +724,10 @@ class AuthManager {
   }
 
   async addToWatchHistory(imdbId, type, title = null, poster = null, year = null) {
-    console.log('addToWatchHistory called with:', { imdbId, type, title, poster, year });
+    console.log('📝 addToWatchHistory called with:', { imdbId, type, title, poster, year });
 
     if (!this.currentUser) {
-      console.log('No current user, cannot add to watch history');
+      console.log('⚠️ No current user, cannot add to watch history');
       return;
     }
 
@@ -674,29 +735,33 @@ class AuthManager {
     const storageKey = `watchHistory_${userId}`;
     let history = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
-    console.log('Current history length:', history.length);
+    console.log('📚 Current history length:', history.length);
 
     // Remove existing entry if it exists
     history = history.filter(item => item.imdbId !== imdbId);
 
-    // If title and poster are not provided or are null, fetch from OMDb API
-    if (!title || !poster || title === null || poster === null) {
-      console.log('Fetching movie details for:', imdbId, 'Current data:', { title, poster, year });
+    // Always fetch from OMDb API if title/poster are missing or invalid
+    const needsFetch = !title || !poster || 
+                       title === null || poster === null ||
+                       title === 'Unknown Title' || title === 'Unknown' ||
+                       poster === 'N/A';
+    
+    if (needsFetch) {
+      console.log('🔍 Fetching movie details for:', imdbId);
       try {
         const movieData = await this.fetchMovieDetails(imdbId);
-        title = title || movieData.title;
-        poster = poster || movieData.poster;
-        year = year || movieData.year;
-        console.log('Fetched movie data:', movieData);
-        console.log('Final data after fetch:', { title, poster, year });
+        title = movieData.title;
+        poster = movieData.poster;
+        year = movieData.year;
+        console.log('✅ Fetched movie data:', movieData);
       } catch (error) {
-        console.log('Could not fetch movie details:', error);
+        console.error('❌ Could not fetch movie details:', error);
         title = title || 'Unknown Title';
         poster = poster || null;
         year = year || 'Unknown';
       }
     } else {
-      console.log('Using provided movie data:', { title, poster, year });
+      console.log('✅ Using provided movie data:', { title, poster, year });
     }
 
     const newEntry = {
@@ -721,30 +786,95 @@ class AuthManager {
   }
 
   async fetchMovieDetails(imdbId) {
-    // Using OMDb API (free tier allows 1000 requests per day)
-    const apiKey = '8265bd1c'; // Free API key for demo purposes
-    const response = await fetch(
-      `https://www.omdbapi.com/?i=${imdbId}&apikey=${apiKey}`
-    );
+    const configuredKey =
+      window.ENV?.OMDB_API_KEY ||
+      window.ENV?.VITE_OMDB_API_KEY ||
+      null;
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch movie details');
+    const omdbKeys = [
+      configuredKey,
+      'thewdb',
+      'trilogy',
+      '564727fa',
+      '8265bd1c',
+      'b9a9e5c6',
+      'a1b2c3d4',
+    ].filter(Boolean);
+
+    for (const apiKey of omdbKeys) {
+      try {
+        const omdbUrl = `https://www.omdbapi.com/?i=${imdbId}&apikey=${apiKey}`;
+        console.log('🌐 Trying OMDb API:', omdbUrl);
+
+        const response = await fetch(omdbUrl);
+        if (!response.ok) {
+          throw new Error(
+            `OMDb HTTP ${response.status} ${response.statusText}`
+          );
+        }
+
+        const data = await response.json();
+        console.log('📦 OMDb API response:', data);
+
+        if (data.Response === 'True') {
+          const movieData = {
+            title: data.Title || 'Unknown Title',
+            poster: data.Poster && data.Poster !== 'N/A' ? data.Poster : null,
+            year: data.Year || 'Unknown',
+            type: data.Type?.toLowerCase() === 'series' ? 'series' : 'movie',
+            genre: data.Genre || 'Unknown',
+            plot: data.Plot || '',
+          };
+
+          console.log('✨ Parsed OMDb movie data:', movieData);
+          return movieData;
+        }
+
+        throw new Error(data.Error || 'OMDb movie not found');
+      } catch (error) {
+        console.warn(`⚠️ OMDb key failed (${apiKey}):`, error.message);
+      }
     }
 
-    const data = await response.json();
+    // Fallback: public IMDb suggestion API (no API key required)
+    try {
+      const imdbUrl = `https://v3.sg.media-imdb.com/suggestion/${imdbId.charAt(0)}/${imdbId}.json`;
+      console.log('🌐 Falling back to IMDb suggestion API:', imdbUrl);
 
-    if (data.Response === 'False') {
-      throw new Error(data.Error || 'Movie not found');
+      const response = await fetch(imdbUrl);
+      if (!response.ok) {
+        throw new Error(
+          `IMDb fallback HTTP ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      const match = Array.isArray(data?.d)
+        ? data.d.find(item => item.id === imdbId) || data.d[0]
+        : null;
+
+      if (!match) {
+        throw new Error('IMDb fallback returned no matching title');
+      }
+
+      const fallbackMovieData = {
+        title: match.l || 'Unknown Title',
+        poster: match.i?.imageUrl || null,
+        year: match.y ? String(match.y) : 'Unknown',
+        type:
+          match.qid === 'tvSeries' || match.q === 'TV series'
+            ? 'series'
+            : 'movie',
+        genre: 'Unknown',
+        plot: '',
+      };
+
+      console.log('✨ Parsed IMDb fallback data:', fallbackMovieData);
+      return fallbackMovieData;
+    } catch (fallbackError) {
+      console.error('❌ IMDb fallback failed:', fallbackError);
+      throw new Error('Unable to fetch movie details from OMDb/IMDb');
     }
-
-    return {
-      title: data.Title,
-      poster: data.Poster !== 'N/A' ? data.Poster : null,
-      year: data.Year,
-      type: data.Type?.toLowerCase() === 'series' ? 'series' : 'movie',
-      genre: data.Genre,
-      plot: data.Plot,
-    };
   }
 
   getWatchHistory() {
