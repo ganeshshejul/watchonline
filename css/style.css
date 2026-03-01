@@ -2609,6 +2609,7 @@ body.light-theme .auth-required-message {
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 28px;
   margin-top: 20px;
+  align-items: stretch;
 }
 
 /* Recommendation Card - Cinematic Netflix-style */
@@ -2622,6 +2623,9 @@ body.light-theme .auth-required-message {
   border: 1px solid var(--glass-border);
   position: relative;
   box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .recommendation-card:hover {
@@ -2637,6 +2641,7 @@ body.light-theme .auth-required-message {
   height: 360px;
   overflow: hidden;
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(236, 72, 153, 0.05));
+  flex-shrink: 0;
 }
 
 .recommendation-poster img {
@@ -2741,6 +2746,9 @@ body.light-theme .auth-required-message {
 .recommendation-info {
   padding: 20px;
   background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.2));
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .recommendation-title {
@@ -2752,6 +2760,7 @@ body.light-theme .auth-required-message {
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   white-space: normal;
@@ -2813,7 +2822,8 @@ body.light-theme .auth-required-message {
   padding: 4px 8px;
   border-radius: 8px;
   display: inline-block;
-  margin-top: 4px;
+  margin-top: auto;
+  align-self: flex-start;
 }
 
 /* Responsive Design for Recommendations */
@@ -3120,6 +3130,12 @@ body.light-theme .check-verification-btn:hover {
   background-color: #5a4cbd;
 }
 
+body.light-theme .play-recommendation-btn,
+body.light-theme .play-recommendation-btn span,
+body.light-theme .play-recommendation-btn i {
+  color: #ffffff !important;
+}
+
 body.light-theme .step-card {
   background-color: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -3286,6 +3302,22 @@ body.light-theme .auth-message-btn.login:hover {
 
 /* Core Light Theme Overrides */
 body.light-theme {
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #eef1f5;
+  --bg-tertiary: #e2e8f0;
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(15, 23, 42, 0.12);
+  --glass-hover: rgba(255, 255, 255, 0.95);
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-tertiary: #6c757d;
+  --accent-primary: #6a5acd;
+  --accent-light: #7b6ee0;
+  --accent-dark: #5a4cbd;
+  --accent-glow: rgba(106, 90, 205, 0.35);
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.12);
+  --shadow-lg: 0 10px 32px rgba(15, 23, 42, 0.16);
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%) !important;
   color: #212529 !important;
 }
@@ -3349,8 +3381,7 @@ body.light-theme ::-webkit-scrollbar-thumb:hover {
 }
 
 /* Light Mode Text Colors */
-body.light-theme p,
-body.light-theme span {
+body.light-theme p {
   color: #495057;
 }
 
@@ -3400,4 +3431,72 @@ body.light-theme .dropdown-loading i {
 body.light-theme .empty-history p,
 body.light-theme .auth-message p {
   color: #495057;
+}
+
+/* Light Mode Complete Coverage */
+body.light-theme .site-header,
+body.light-theme .player-section,
+body.light-theme .recommendations-section,
+body.light-theme .site-footer,
+body.light-theme .step-card,
+body.light-theme .recommendation-card,
+body.light-theme .history-item,
+body.light-theme .modal-content,
+body.light-theme .search-dropdown,
+body.light-theme .user-dropdown {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  color: var(--text-primary);
+}
+
+body.light-theme .recommendation-info {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), rgba(15, 23, 42, 0.06));
+}
+
+body.light-theme .recommendation-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(15, 23, 42, 0.25) 40%,
+    rgba(15, 23, 42, 0.65) 100%
+  );
+}
+
+body.light-theme button,
+body.light-theme input,
+body.light-theme select,
+body.light-theme textarea {
+  color: var(--text-primary);
+}
+
+body.light-theme .hero-subtitle,
+body.light-theme .step-content p,
+body.light-theme .recommendation-genres,
+body.light-theme .disclaimer,
+body.light-theme .no-recommendations p,
+body.light-theme .empty-history p,
+body.light-theme .dropdown-loading span,
+body.light-theme .no-results {
+  color: var(--text-secondary);
+}
+
+body.light-theme .result-title,
+body.light-theme .recommendation-title,
+body.light-theme .history-title,
+body.light-theme .modal-header h2,
+body.light-theme .dropdown-item,
+body.light-theme label,
+body.light-theme .user-name {
+  color: var(--text-primary);
+}
+
+body.light-theme .tab-button.active,
+body.light-theme .genre-btn.active,
+body.light-theme .get-recommendations-btn,
+body.light-theme #playButton,
+body.light-theme .play-recommendation-btn,
+body.light-theme .signup-btn,
+body.light-theme .auth-submit-btn,
+body.light-theme .check-verification-btn {
+  color: #ffffff !important;
 }

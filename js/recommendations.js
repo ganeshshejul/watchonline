@@ -14,7 +14,17 @@ class AIRecommendationEngine {
 
     // Current API for rotation
     this.currentAPI = this.movieAPIs.primary;
+    this.freeMovieAPI = this.movieAPIs.primary;
     this.apiIndex = 0;
+
+    // OMDb keys for metadata enrichment (accurate genre/year/rating/poster)
+    this.omdbKeys = [
+      window.ENV?.OMDB_API_KEY,
+      window.ENV?.VITE_OMDB_API_KEY,
+      'thewdb',
+      'trilogy',
+      '564727fa',
+    ].filter(Boolean);
 
     this.genres = [
       'Action', 'Adventure', 'Animation', 'Biography', 'Comedy', 'Crime',
@@ -99,8 +109,9 @@ class AIRecommendationEngine {
       if (item.genre) {
         const genres = item.genre.split(',').map(g => g.trim());
         genres.forEach(genre => {
-          preferences.watchedGenres[genre] = (preferences.watchedGenres[genre] || 0) + 1;
-          preferences.genres[genre] = Math.min(10, (preferences.genres[genre] || 0) + 0.5);
+          const normalizedGenre = this.normalizeGenre(genre);
+          preferences.watchedGenres[normalizedGenre] = (preferences.watchedGenres[normalizedGenre] || 0) + 1;
+          preferences.genres[normalizedGenre] = Math.min(10, (preferences.genres[normalizedGenre] || 0) + 1);
         });
       }
     });
@@ -109,55 +120,177 @@ class AIRecommendationEngine {
     this.saveUserPreferences();
   }
 
+  normalizeGenre(genre) {
+    if (!genre) return '';
+    const text = genre.toLowerCase().trim();
+    const map = {
+      'science fiction': 'Sci-Fi',
+      'sci-fi': 'Sci-Fi',
+      'scifi': 'Sci-Fi',
+      'tv movie': 'Drama'
+    };
+
+    if (map[text]) return map[text];
+    return genre
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ')
+      .replace('Sci Fi', 'Sci-Fi');
+  }
+
+  extractNumericYear(yearValue) {
+    if (!yearValue) return null;
+    const match = String(yearValue).match(/\d{4}/);
+    return match ? parseInt(match[0], 10) : null;
+  }
+
+  getItemGenres(item) {
+    if (!item?.Genre) return [];
+    return item.Genre.split(',')
+      .map(genre => this.normalizeGenre(genre))
+      .filter(Boolean);
+  }
+
+  getGenreOverlapScore(item, selectedGenres = []) {
+    if (!selectedGenres.length) return 0;
+
+    const selected = selectedGenres.map(genre => this.normalizeGenre(genre).toLowerCase());
+    const itemGenres = this.getItemGenres(item).map(genre => genre.toLowerCase());
+    if (!itemGenres.length) return 0;
+
+    const matches = itemGenres.filter(genre => selected.includes(genre));
+    return matches.length / selected.length;
+  }
+
+  filterBySelectedGenresStrict(items, selectedGenres = []) {
+    if (!selectedGenres.length) return items;
+    const strictMatches = items.filter(item => this.getGenreOverlapScore(item, selectedGenres) > 0);
+    return strictMatches.length > 0 ? strictMatches : items;
+  }
+
+  applyLatestContentBlend(sortedItems, limit) {
+    if (!sortedItems.length) return [];
+
+    const currentYear = new Date().getFullYear();
+    const latestPool = sortedItems.filter(item => {
+      const year = this.extractNumericYear(item.Year);
+      return year && year >= currentYear - 2;
+    });
+
+    const latestQuota = Math.min(Math.ceil(limit * 0.35), latestPool.length);
+    const latestSet = latestPool.slice(0, latestQuota);
+
+    const latestIds = new Set(latestSet.map(item => item.imdbID || `${item.Title}-${item.Year}`));
+    const rest = sortedItems.filter(item => !latestIds.has(item.imdbID || `${item.Title}-${item.Year}`));
+
+    return [...latestSet, ...rest].slice(0, limit);
+  }
+
+  async fetchOMDbDetails(imdbId) {
+    if (!imdbId || !this.omdbKeys.length) return null;
+
+    for (const key of this.omdbKeys) {
+      try {
+        const response = await fetch(`https://www.omdbapi.com/?i=${imdbId}&apikey=${key}`);
+        if (!response.ok) continue;
+        const data = await response.json();
+
+        if (data.Response === 'True') {
+          return {
+            Title: data.Title || null,
+            Year: data.Year || null,
+            imdbID: data.imdbID || imdbId,
+            Type: data.Type || null,
+            Poster: data.Poster && data.Poster !== 'N/A' ? data.Poster : null,
+            Genre: data.Genre || null,
+            Language: data.Language || null,
+            Country: data.Country || null,
+            imdbRating: data.imdbRating && data.imdbRating !== 'N/A' ? data.imdbRating : null,
+            Plot: data.Plot && data.Plot !== 'N/A' ? data.Plot : null,
+            Director: data.Director && data.Director !== 'N/A' ? data.Director : null,
+            Actors: data.Actors && data.Actors !== 'N/A' ? data.Actors : null,
+            Runtime: data.Runtime && data.Runtime !== 'N/A' ? data.Runtime : null,
+          };
+        }
+      } catch (error) {
+        console.warn(`⚠️ OMDb enrichment failed for key ${key}:`, error.message);
+      }
+    }
+
+    return null;
+  }
+
+  async enrichRecommendationsWithOMDb(items) {
+    const maxEnrichment = Math.min(items.length, 30);
+    const enriched = [];
+
+    for (let index = 0; index < maxEnrichment; index++) {
+      const item = items[index];
+      const omdbData = await this.fetchOMDbDetails(item.imdbID);
+
+      if (omdbData) {
+        enriched.push({
+          ...item,
+          ...Object.fromEntries(
+            Object.entries(omdbData).filter(([, value]) => value !== null && value !== undefined)
+          ),
+        });
+      } else {
+        enriched.push(item);
+      }
+    }
+
+    if (items.length > maxEnrichment) {
+      enriched.push(...items.slice(maxEnrichment));
+    }
+
+    return enriched;
+  }
+
   /**
    * Calculate AI-powered recommendation score for a movie/series
    */
   calculateAIScore(item, userGenres, selectedGenres = []) {
     let score = 0;
-    
-    // Base popularity score
-    score += Math.random() * 2; // Simulated popularity factor
-    
-    // Genre matching score
-    if (item.Genre) {
-      const itemGenres = item.Genre.split(',').map(g => g.trim());
-      
-      // Selected genre boost
-      if (selectedGenres.length > 0) {
-        const genreMatch = itemGenres.some(genre => 
-          selectedGenres.some(selected => genre.toLowerCase().includes(selected.toLowerCase()))
-        );
-        if (genreMatch) score += 5;
+
+    // 1) Selected genre relevance (highest weight)
+    const overlap = this.getGenreOverlapScore(item, selectedGenres);
+    score += overlap * 45;
+
+    // 2) User preference match
+    const itemGenres = this.getItemGenres(item);
+    let preferenceScore = 0;
+    itemGenres.forEach(genre => {
+      if (userGenres[genre]) {
+        preferenceScore += Math.min(5, userGenres[genre]);
       }
-      
-      // User preference score
-      itemGenres.forEach(genre => {
-        if (userGenres[genre]) {
-          score += userGenres[genre] * 0.8;
-        }
-      });
-    }
-    
-    // Year recency bonus
-    if (item.Year && !isNaN(item.Year)) {
-      const year = parseInt(item.Year);
-      const currentYear = new Date().getFullYear();
+    });
+    score += Math.min(25, preferenceScore * 1.2);
+
+    // 3) Freshness / recency
+    const currentYear = new Date().getFullYear();
+    const year = this.extractNumericYear(item.Year);
+    if (year) {
       const yearDiff = currentYear - year;
-      
-      if (yearDiff <= 5) score += 2;
-      else if (yearDiff <= 10) score += 1;
-      else if (yearDiff > 30) score -= 1;
+      if (yearDiff <= 1) score += 20;
+      else if (yearDiff <= 3) score += 15;
+      else if (yearDiff <= 5) score += 10;
+      else if (yearDiff <= 10) score += 5;
+      else if (yearDiff > 25) score -= 5;
     }
-    
-    // Rating bonus (simulated)
+
+    // 4) IMDb rating quality
     if (item.imdbRating && !isNaN(item.imdbRating)) {
       const rating = parseFloat(item.imdbRating);
-      if (rating >= 8.0) score += 3;
-      else if (rating >= 7.0) score += 2;
-      else if (rating >= 6.0) score += 1;
+      score += Math.max(0, Math.min(10, (rating - 5.5) * 2.2));
     }
-    
-    return Math.max(0, score);
+
+    // Penalty when user selected genres but item has no overlap
+    if (selectedGenres.length > 0 && overlap === 0) {
+      score -= 30;
+    }
+
+    return Math.max(0, Number(score.toFixed(2)));
   }
 
   /**
@@ -185,6 +318,15 @@ class AIRecommendationEngine {
 
       let recommendations = [];
 
+      // Primary automated engine: OMDb keyword + year retrieval (latest + accurate metadata)
+      const automatedRecommendations = await this.getAdvancedOMDbRecommendations(
+        selectedGenres,
+        type,
+        limit,
+        language
+      );
+      recommendations = [...automatedRecommendations];
+
       // Get recommendations from multiple sources based on language preference
       const sources = this.getRecommendationSources(selectedGenres, type, limit, language);
 
@@ -195,6 +337,7 @@ class AIRecommendationEngine {
       });
 
       for (const source of sources) {
+        if (recommendations.length >= limit * 3) break;
         try {
           console.log(`🔄 Getting ${source.name} recommendations...`);
           const items = await source.fn();
@@ -217,15 +360,25 @@ class AIRecommendationEngine {
       const uniqueRecommendations = this.removeDuplicates(recommendations);
       console.log(`🔄 Unique recommendations: ${uniqueRecommendations.length}`);
 
-      const scoredRecommendations = uniqueRecommendations.map(item => ({
+      // Enrich metadata for accuracy (real genre/year/rating/poster)
+      const enrichedRecommendations = await this.enrichRecommendationsWithOMDb(uniqueRecommendations);
+
+      // Strict selected-genre filtering for better relevance
+      const filteredRecommendations = this.filterBySelectedGenresStrict(
+        enrichedRecommendations,
+        selectedGenres
+      );
+
+      const scoredRecommendations = filteredRecommendations.map(item => ({
         ...item,
         aiScore: this.calculateAIScore(item, this.userPreferences.genres, selectedGenres)
       }));
 
       // Sort by AI score and limit results
-      const finalRecommendations = scoredRecommendations
-        .sort((a, b) => b.aiScore - a.aiScore)
-        .slice(0, limit);
+      const sortedRecommendations = scoredRecommendations
+        .sort((a, b) => b.aiScore - a.aiScore);
+
+      const finalRecommendations = this.applyLatestContentBlend(sortedRecommendations, limit);
 
       console.log(`🎯 Final recommendations: ${finalRecommendations.length}`);
       console.log('📊 Top recommendations:', finalRecommendations.slice(0, 3).map(r => ({ title: r.Title, score: r.aiScore })));
@@ -241,6 +394,161 @@ class AIRecommendationEngine {
     }
   }
 
+  mapTypeForOMDb(type) {
+    if (type === 'movies') return 'movie';
+    if (type === 'series') return 'series';
+    return '';
+  }
+
+  getAutomatedQueryTerms(selectedGenres = [], language = 'all') {
+    const genreTermMap = {
+      Action: ['action', 'adventure', 'mission'],
+      Adventure: ['adventure', 'quest', 'expedition'],
+      Animation: ['animation', 'animated', 'pixar'],
+      Biography: ['biography', 'biopic', 'true story'],
+      Comedy: ['comedy', 'funny', 'humor'],
+      Crime: ['crime', 'detective', 'mafia'],
+      Documentary: ['documentary', 'docu', 'real story'],
+      Drama: ['drama', 'emotional', 'family'],
+      Family: ['family', 'kids', 'children'],
+      Fantasy: ['fantasy', 'magic', 'mythology'],
+      History: ['history', 'period', 'historical'],
+      Horror: ['horror', 'scary', 'haunted'],
+      Music: ['music', 'musical', 'band'],
+      Mystery: ['mystery', 'investigation', 'suspense'],
+      Romance: ['romance', 'love', 'relationship'],
+      'Sci-Fi': ['sci-fi', 'science fiction', 'future'],
+      Sport: ['sports', 'athlete', 'tournament'],
+      Thriller: ['thriller', 'psychological thriller', 'suspense'],
+      War: ['war', 'military', 'battle'],
+      Western: ['western', 'cowboy', 'frontier'],
+    };
+
+    let terms = [];
+    if (selectedGenres.length > 0) {
+      selectedGenres.forEach(genre => {
+        const normalized = this.normalizeGenre(genre);
+        terms.push(...(genreTermMap[normalized] || [normalized.toLowerCase()]));
+      });
+    } else {
+      terms = ['popular', 'trending', 'top rated', 'new release'];
+    }
+
+    if (language === 'hindi') {
+      terms.push('bollywood', 'hindi movie', 'indian cinema');
+    } else if (language === 'english') {
+      terms.push('hollywood', 'english movie');
+    }
+
+    return [...new Set(terms)].slice(0, 12);
+  }
+
+  isLanguageMatch(item, language = 'all') {
+    if (language === 'all') return true;
+
+    const itemLanguage = String(item.Language || '').toLowerCase();
+    if (language === 'hindi') {
+      return itemLanguage.includes('hindi') || this.isLikelyHindiContent(item);
+    }
+
+    if (language === 'english') {
+      return itemLanguage.includes('english') && !this.isLikelyHindiContent(item);
+    }
+
+    return true;
+  }
+
+  async searchOMDbByTerm(term, type, year, pageLimit = 1) {
+    const omdbType = this.mapTypeForOMDb(type);
+
+    for (const key of this.omdbKeys) {
+      try {
+        const collected = [];
+        for (let page = 1; page <= pageLimit; page++) {
+          const params = new URLSearchParams({
+            s: term,
+            apikey: key,
+            page: String(page),
+          });
+
+          if (omdbType) params.set('type', omdbType);
+          if (year) params.set('y', String(year));
+
+          const url = `https://www.omdbapi.com/?${params.toString()}`;
+          const response = await fetch(url);
+          if (!response.ok) break;
+
+          const data = await response.json();
+          if (data.Response !== 'True' || !Array.isArray(data.Search)) break;
+
+          collected.push(...data.Search);
+          if (data.Search.length < 10) break;
+        }
+
+        if (collected.length > 0) return collected;
+      } catch (error) {
+        console.warn(`⚠️ OMDb search failed for term "${term}" with key ${key}:`, error.message);
+      }
+    }
+
+    return [];
+  }
+
+  async getAdvancedOMDbRecommendations(selectedGenres = [], type = 'all', limit = 12, language = 'all') {
+    console.log('🧠 Running advanced automated recommendation retrieval...');
+
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 7 }, (_, index) => currentYear - index);
+    const terms = this.getAutomatedQueryTerms(selectedGenres, language);
+    const targetPoolSize = Math.max(limit * 4, 36);
+
+    const rawCandidates = [];
+
+    for (const year of years) {
+      if (rawCandidates.length >= targetPoolSize) break;
+
+      for (const term of terms) {
+        if (rawCandidates.length >= targetPoolSize) break;
+
+        const searchResults = await this.searchOMDbByTerm(term, type, year, 1);
+        if (searchResults.length === 0) continue;
+
+        const mapped = searchResults.map(result => ({
+          Title: result.Title,
+          Year: result.Year,
+          imdbID: result.imdbID,
+          Type: result.Type,
+          Poster: result.Poster !== 'N/A' ? result.Poster : null,
+          Genre: '',
+          imdbRating: null,
+        }));
+
+        rawCandidates.push(...mapped);
+      }
+    }
+
+    const unique = this.removeDuplicates(rawCandidates);
+    const enriched = await this.enrichRecommendationsWithOMDb(unique);
+
+    const languageFiltered = enriched.filter(item => this.isLanguageMatch(item, language));
+    const genreFiltered = this.filterBySelectedGenresStrict(languageFiltered, selectedGenres);
+
+    const sorted = genreFiltered
+      .sort((a, b) => {
+        const yearA = this.extractNumericYear(a.Year) || 0;
+        const yearB = this.extractNumericYear(b.Year) || 0;
+        if (yearB !== yearA) return yearB - yearA;
+
+        const ratingA = parseFloat(a.imdbRating || '0') || 0;
+        const ratingB = parseFloat(b.imdbRating || '0') || 0;
+        return ratingB - ratingA;
+      })
+      .slice(0, targetPoolSize);
+
+    console.log('🧠 Advanced automated candidates:', sorted.length);
+    return sorted;
+  }
+
   /**
    * Get recommendation sources based on language preference
    */
@@ -250,6 +558,10 @@ class AIRecommendationEngine {
     if (language === 'hindi') {
       // Hindi/Bollywood only
       return [
+        {
+          name: 'Latest Releases',
+          fn: () => this.getLatestRecommendations(type, Math.ceil(limit * 0.2), language)
+        },
         {
           name: 'Hindi/Bollywood API',
           fn: () => this.getHindiRecommendations(selectedGenres, type, Math.ceil(limit * 0.8))
@@ -262,6 +574,10 @@ class AIRecommendationEngine {
     } else if (language === 'english') {
       // English only
       return [
+        {
+          name: 'Latest Releases',
+          fn: () => this.getLatestRecommendations(type, Math.ceil(limit * 0.25), language)
+        },
         {
           name: 'Genre-based API (English)',
           fn: () => this.getEnglishRecommendations(selectedGenres, type, Math.ceil(limit * 0.6))
@@ -278,6 +594,10 @@ class AIRecommendationEngine {
     } else {
       // All languages (mixed)
       return [
+        {
+          name: 'Latest Releases',
+          fn: () => this.getLatestRecommendations(type, Math.ceil(limit * 0.25), language)
+        },
         {
           name: 'Genre-based API',
           fn: () => this.getAPIRecommendationsByGenre(selectedGenres, type, Math.ceil(limit * 0.2))
@@ -300,6 +620,42 @@ class AIRecommendationEngine {
         }
       ];
     }
+  }
+
+  async getLatestRecommendations(type, limit, language = 'all') {
+    const currentYear = new Date().getFullYear();
+    const yearTerms = Array.from({ length: 6 }, (_, index) => String(currentYear - index));
+    const recommendations = [];
+
+    for (const term of yearTerms) {
+      try {
+        const url = `${this.getCurrentAPI()}?q=${encodeURIComponent(term)}`;
+        const response = await fetch(url);
+        if (!response.ok) continue;
+
+        const data = await response.json();
+        if (!data.ok || !Array.isArray(data.description)) continue;
+
+        for (const rawMovie of data.description.slice(0, Math.ceil(limit / 2))) {
+          const movie = this.formatAPIMovie(rawMovie);
+          if (!movie || !this.matchesContentType(movie, type)) continue;
+
+          if (language === 'hindi' && !this.isLikelyHindiContent(movie)) continue;
+          if (language === 'english' && this.isLikelyHindiContent(movie)) continue;
+
+          const year = this.extractNumericYear(movie.Year);
+          if (year && year >= currentYear - 3) {
+            recommendations.push(movie);
+          }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 150));
+      } catch (error) {
+        console.warn(`❌ Latest recommendation fetch failed for ${term}:`, error);
+      }
+    }
+
+    return this.removeDuplicates(recommendations).slice(0, limit);
   }
 
   /**
